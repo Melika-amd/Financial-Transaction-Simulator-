@@ -63,6 +63,9 @@ def assign_risk_score(transaction):
         score += 1
     return min(score, 3)
 
+def generate_account_number():
+    return ''.join([str(random.randint(0, 9)) for _ in range(10)])
+
 def generate_transactions(users, num_transactions=100):
     transactions = []
     for _ in range(num_transactions):
@@ -74,9 +77,13 @@ def generate_transactions(users, num_transactions=100):
         amount = generate_transaction_amount(t_type)
         timestamp = generate_transaction_timestamp()
         is_fraud = is_fraudulent(amount, timestamp)
+        sender_account = generate_account_number()
+        receiver_account = generate_account_number()
         transactions.append({
             "Sender": sender,
+            "SenderAccount": f"******{sender_account[-4:]}",
             "Receiver": receiver,
+            "ReceiverAccount": f"******{receiver_account[-4:]}",
             "Type": t_type,
             "Amount": amount,
             "Timestamp": timestamp,
@@ -84,22 +91,12 @@ def generate_transactions(users, num_transactions=100):
         })
     return pd.DataFrame(transactions)
 
-def generate_transactions_with_risk(users, num_transactions=100):
+def generate_transactions_with_risk(users, num_transactions=200):
     transactions = generate_transactions(users, num_transactions)
     transactions["RiskScore"] = transactions.apply(assign_risk_score, axis=1)
     return transactions
 
 def export_transactions_to_csv(transactions_df, filename="transactions_export.csv"):
-    """
-    Export transactions DataFrame to a CSV file
-    
-    Args:
-        transactions_df (pd.DataFrame): DataFrame containing transactions
-        filename (str): Name of the output CSV file
-    
-    Returns:
-        str: Path to the exported CSV file
-    """
     try:
         transactions_df.to_csv(filename, index=False)
         return filename
