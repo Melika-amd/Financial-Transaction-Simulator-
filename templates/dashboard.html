@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transaction Dashboard</title>
     <style>
-        .refresh-button {
+        .refresh-button, .export-button {
             padding: 10px 20px;
             background-color: #4CAF50;
             color: white;
@@ -14,9 +14,17 @@
             cursor: pointer;
             margin-right: 10px;
             margin-bottom: 20px;
+            text-decoration: none;
+            display: inline-block;
         }
-        .refresh-button:hover {
+        .refresh-button:hover, .export-button:hover {
             background-color: #45a049;
+        }
+        .export-button {
+            background-color: #008CBA;
+        }
+        .export-button:hover {
+            background-color: #007399;
         }
         .export-button-container {
             display: flex;
@@ -56,7 +64,7 @@
     <h1>Financial Transactions and Risk Scores</h1>
     <div class="export-button-container">
         <button class="refresh-button" onclick="refreshData()">Refresh Data</button>
-        <button class="refresh-button" onclick="window.location.href='{% raw %}{{ url_for('export_csv') }}{% endraw %}'">Export to CSV</button>
+        <a href="{{ url_for('export_csv') }}" class="export-button">Export CSV</a>
     </div>
     <table border="1">
         <thead>

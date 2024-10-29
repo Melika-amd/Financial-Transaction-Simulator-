@@ -36,31 +36,37 @@ def dashboard():
 @app.route('/refresh-transactions')
 def get_transactions():
     global transactions_df, users
-    # Generate new transactions each time
     transactions_df = generate_transactions_with_risk(users)
     transactions = transactions_df.to_dict(orient="records")
     return jsonify(transactions)
 
 @app.route('/export-csv')
 def export_csv():
-    # Generate transactions
-    users = generate_users(5)
-    transactions = generate_transactions_with_risk(users, 20)
+    global transactions_df
     
-    # Create a temporary file
-    temp_dir = tempfile.gettempdir()
-    temp_file = os.path.join(temp_dir, 'transactions_export.csv')
-    
-    # Export to CSV
-    export_transactions_to_csv(transactions, temp_file)
-    
-    # Send file to user
-    return send_file(
-        temp_file,
-        mimetype='text/csv',
-        as_attachment=True,
-        download_name='transactions_export.csv'
-    )
+    try:
+        temp_dir = tempfile.gettempdir()
+        temp_file = os.path.join(temp_dir, 'transactions_export.csv')
+        
+        transactions_df.to_csv(temp_file, index=False)
+        
+        response = send_file(
+            temp_file,
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name='transactions_export.csv'
+        )
+        
+        response.headers["Cache-Control"] = "no-cache"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        response.headers['Cache-Control'] = 'public, max-age=0'
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error exporting CSV: {str(e)}")
+        return jsonify({"error": "Failed to export CSV"}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
