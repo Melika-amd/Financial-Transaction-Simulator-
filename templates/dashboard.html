@@ -4,9 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transaction Dashboard</title>
+    <style>
+        .refresh-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 20px;
+        }
+        .refresh-button:hover {
+            background-color: #45a049;
+        }
+        .export-button-container {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+    <script>
+        function refreshData() {
+            fetch('/refresh-transactions')
+                .then(response => response.json())
+                .then(transactions => {
+                    const tbody = document.querySelector('tbody');
+                    tbody.innerHTML = '';
+                    
+                    transactions.forEach(transaction => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${transaction.Sender}</td>
+                            <td>${transaction.Receiver}</td>
+                            <td>${transaction.Type}</td>
+                            <td>${transaction.Amount}</td>
+                            <td>${transaction.Timestamp}</td>
+                            <td>${transaction.IsFraud ? 'Yes' : 'No'}</td>
+                            <td>${transaction.RiskScore}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error refreshing data:', error);
+                    alert('Error refreshing data. Please try again.');
+                });
+        }
+    </script>
 </head>
 <body>
     <h1>Financial Transactions and Risk Scores</h1>
+    <div class="export-button-container">
+        <button class="refresh-button" onclick="refreshData()">Refresh Data</button>
+        <button class="refresh-button" onclick="window.location.href='{% raw %}{{ url_for('export_csv') }}{% endraw %}'">Export to CSV</button>
+    </div>
     <table border="1">
         <thead>
             <tr>

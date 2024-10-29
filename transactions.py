@@ -1,6 +1,7 @@
 import random
 import pandas as pd
 from datetime import datetime, timedelta
+from utils import generate_random_name
 
 def generate_users(num_users=10):
     users = []
@@ -45,14 +46,12 @@ def generate_transaction_timestamp():
     random_minute = random.randint(0, 59)
     return datetime(random_day.year, random_day.month, random_day.day, random_hour, random_minute)
 
-def is_fraudulent(sender, amount, timestamp, failed_attempts=0):
+def is_fraudulent(amount, timestamp, failed_attempts=0):
     if amount > 4000:
         return True
     if timestamp.hour < 6:
         return True
     if failed_attempts >= 3:
-        return True
-    if sender["SpendingBehavior"] == "Low" and amount > 1000:
         return True
     return False
 
@@ -67,15 +66,17 @@ def assign_risk_score(transaction):
 def generate_transactions(users, num_transactions=100):
     transactions = []
     for _ in range(num_transactions):
-        sender = random.choice(users)
-        receiver = random.choice([u for u in users if u != sender])
+        sender = generate_random_name()
+        receiver = generate_random_name()
+        while receiver == sender:
+            receiver = generate_random_name()
         t_type = generate_transaction_type()
         amount = generate_transaction_amount(t_type)
         timestamp = generate_transaction_timestamp()
-        is_fraud = is_fraudulent(sender, amount, timestamp)
+        is_fraud = is_fraudulent(amount, timestamp)
         transactions.append({
-            "Sender": sender["UserID"],
-            "Receiver": receiver["UserID"],
+            "Sender": sender,
+            "Receiver": receiver,
             "Type": t_type,
             "Amount": amount,
             "Timestamp": timestamp,
@@ -87,6 +88,24 @@ def generate_transactions_with_risk(users, num_transactions=100):
     transactions = generate_transactions(users, num_transactions)
     transactions["RiskScore"] = transactions.apply(assign_risk_score, axis=1)
     return transactions
+
+def export_transactions_to_csv(transactions_df, filename="transactions_export.csv"):
+    """
+    Export transactions DataFrame to a CSV file
+    
+    Args:
+        transactions_df (pd.DataFrame): DataFrame containing transactions
+        filename (str): Name of the output CSV file
+    
+    Returns:
+        str: Path to the exported CSV file
+    """
+    try:
+        transactions_df.to_csv(filename, index=False)
+        return filename
+    except Exception as e:
+        print(f"Error exporting transactions: {str(e)}")
+        return None
 
 users = generate_users(5)
 transactions = generate_transactions_with_risk(users, 20)
