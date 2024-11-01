@@ -1,6 +1,8 @@
-from flask import Flask, jsonify, request, render_template, send_file
+from flask import Flask, jsonify, request, render_template, send_file, redirect, url_for, flash
 from flask_bootstrap import Bootstrap
 from transactions import generate_users, generate_transactions_with_risk, export_transactions_to_csv
+from datetime import datetime
+from utils import calculate_risk_score
 import tempfile
 import os
 
@@ -16,15 +18,19 @@ def get_transactions_api():
 @app.route("/api/transaction", methods=["POST"])
 def add_transaction():
     data = request.json
+    
+    risk_score = calculate_risk_score(data["Amount"], data["Type"])
+    
     new_transaction = {
         "Sender": data["Sender"],
         "Receiver": data["Receiver"],
         "Type": data["Type"],
         "Amount": float(data["Amount"]),
-        "Timestamp": data["Timestamp"],
-        "IsFraud": data["IsFraud"],
-        "RiskScore": data["RiskScore"]
+        "Timestamp": datetime.now().isoformat(),
+        "IsFraud": False,
+        "RiskScore": risk_score
     }
+    
     global transactions_df
     transactions_df = transactions_df.append(new_transaction, ignore_index=True)
     return jsonify({"message": "Transaction added successfully"}), 201
@@ -67,6 +73,35 @@ def export_csv():
     except Exception as e:
         print(f"Error exporting CSV: {str(e)}")
         return jsonify({"error": "Failed to export CSV"}), 500
+
+@app.route("/create-transaction", methods=["POST"])
+def create_transaction():
+    try:
+        sender = request.form.get("sender")
+        receiver = request.form.get("receiver")
+        amount = float(request.form.get("amount"))
+        trans_type = request.form.get("type")
+        
+        risk_score = calculate_risk_score(amount, trans_type)
+        
+        new_transaction = {
+            "Sender": sender,
+            "Receiver": receiver,
+            "Type": trans_type,
+            "Amount": amount,
+            "Timestamp": datetime.now().isoformat(),
+            "IsFraud": False,
+            "RiskScore": risk_score
+        }
+        
+        global transactions_df
+        transactions_df = transactions_df.append(new_transaction, ignore_index=True)
+        
+        return redirect(url_for('dashboard'))
+        
+    except Exception as e:
+        print(f"Error creating transaction: {str(e)}")
+        return jsonify({"error": "Failed to create transaction"}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)

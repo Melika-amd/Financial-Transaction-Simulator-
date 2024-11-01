@@ -19,4 +19,24 @@ def generate_random_name():
     """Generate a random full name"""
     first = random.choice(first_names)
     last = random.choice(last_names)
-    return f"{first} {last}" 
+    return f"{first} {last}"
+
+def calculate_risk_score(amount, transaction_type):
+    """
+    Calculate risk score based on amount and transaction type
+    Returns a score between 0 and 1
+    """
+    # Base risk on amount
+    amount_risk = min(amount / 10000, 1)  # Higher amounts = higher risk, max at 10000
+    
+    # Risk weights for different transaction types
+    type_risk = {
+        "PAYMENT": 0.2,
+        "TRANSFER": 0.3,
+        "DEBIT": 0.4,
+        "CASH_OUT": 0.5
+    }
+    
+    # Calculate final risk score
+    risk_score = (amount_risk * 0.7) + (type_risk.get(transaction_type, 0.3) * 0.3)
+    return round(risk_score, 2) 
